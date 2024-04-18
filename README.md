@@ -40,4 +40,3 @@ Feel free to fork the project, make changes, and submit a pull request if you ha
 ## License
 
 This project is open-sourced under the MIT license.
-```
