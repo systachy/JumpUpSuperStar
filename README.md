@@ -1,4 +1,3 @@
-```markdown
 # Jump Up Super Star
 
 This repository contains a 2D platformer game developed using Python and Pygame. The game features a character who navigates through a dynamically generated environment with obstacles and gaps. The objective is to avoid obstacles and not fall through gaps while the scenery scrolls horizontally.
