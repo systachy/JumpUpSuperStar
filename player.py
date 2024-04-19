@@ -4,8 +4,8 @@ import pygame
 PLAYER_SIZE = 50
 PLAYER_COLOR = (255, 0, 0)  # Red color for the player
 GRAVITY = 0.5
-JUMP_SPEED = -10
-GROUND_Y = 980  # This should be 1080 - 100 (if the floor's height is 100 and starts 100 pixels up from the bottom)
+JUMP_SPEED = -13
+GROUND_Y = 980  # Adjusted to actual gameplay screen size minus floor height
 
 class Player:
     def __init__(self):
@@ -30,7 +30,7 @@ class Player:
         self.velocity_y = JUMP_SPEED
         self.on_ground = False
 
-    def update(self, floors, obstacles, screen_height, start_position):
+    def update(self, floors, obstacles, spikes, screen_height, start_position):
         # Apply gravity to player's vertical velocity
         self.velocity_y += GRAVITY
         self.rect.y += self.velocity_y
@@ -39,18 +39,61 @@ class Player:
         self.on_ground = False
 
         # Check for collision with floor segments
-        for floor in floors:
-            if floor.colliderect(self.rect):
-                self.rect.bottom = floor.top
+        for segment, _ in floors:  # Unpack the tuple here
+            if segment.colliderect(self.rect):
+                self.rect.bottom = segment.top
                 self.velocity_y = 0
                 self.on_ground = True
                 break
 
-        # Check for falling below the screen
+        # Check for collision with obstacles
+        for obstacle in obstacles:
+            if self.rect.colliderect(obstacle.rect):
+                # Check if landing on the obstacle
+                if self.velocity_y > 0 and self.rect.bottom <= obstacle.rect.top + 10:
+                    # Correctly landing on the obstacle
+                    self.rect.bottom = obstacle.rect.top
+                    self.velocity_y = 0
+                    self.on_ground = True
+                elif self.velocity_y < 0 and self.rect.top >= obstacle.rect.bottom - 10:
+                    # Hitting the obstacle from below
+                    self.rect.top = obstacle.rect.bottom
+                    self.velocity_y = 0
+                else:
+                    # Determine the side collision based on the center points
+                    if self.rect.centerx < obstacle.rect.centerx:
+                        # Collision from left
+                        self.rect.right = obstacle.rect.left
+                    else:
+                        # Collision from right
+                        self.rect.left = obstacle.rect.right
+
+        # Check for collision with spikes
+        for spike in spikes:
+            if self.rect.colliderect(spike.rect):
+                self.rect.x, self.rect.y = start_position  # Reset to start position
+                self.velocity_y = 0
+                return  # Early return to ensure we don't run further checks
+
+        # Check if player falls below the screen
         if self.rect.bottom > screen_height:
-            # Teleport the player back to the starting position if they fall through a hole
             self.rect.x, self.rect.y = start_position
             self.velocity_y = 0
+
+
+
+            # Check for collision with spikes
+            for spike in spikes:
+                if self.rect.colliderect(spike.rect):
+                    self.rect.x, self.rect.y = start_position  # Teleport to start position
+                    self.velocity_y = 0
+                    return  # Early return to ensure we don't run further checks
+
+            # Check if player falls below the screen
+            if self.rect.bottom > screen_height:
+                # Teleport the player back to the starting position if they fall through a hole
+                self.rect.x, self.rect.y = start_position
+                self.velocity_y = 0
 
     def draw(self, screen, camera_x):
         # Draw the player adjusted for camera position
